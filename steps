@@ -1,0 +1,69 @@
+1) create 3 VMs (Ubuntu 20.04 with microk8s)
+2) check if running on each nodes
+microk8s status --wait-ready
+
+3) create cluster
+
+on "master" :
+
+microk8s add-node
+
+you'll get :
+
+Join node with:
+microk8s join ip-172-31-20-243:25000/DDOkUupkmaBezNnMheTBqFYHLWINGDbf
+
+If the node you are adding is not reachable through the default interface 
+you can use one of the following:
+microk8s join 10.1.84.0:25000/DDOkUupkmaBezNnMheTBqFYHLWINGDbf
+microk8s join 10.22.254.77:25000/DDOkUupkmaBezNnMheTBqFYHLWINGDbf
+
+on slave 1 (copy/paste abave lines)
+microk8s join ip-172-31-20-243:25000/DDOkUupkmaBezNnMheTBqFYHLWINGDbf
+
+diplaying : 
+Contacting cluster at 172-31-20-243
+Waiting for this node to finish joining the cluster. ..
+
+repeat for slave 2:
+on master : microk8s add-node
+on slave  : microk8s join xxxxxx:25000/yyyyyyyyyyyyyyyyyyyyyyy
+
+4) check all nodes running :
+
+microk8s kubectl get nodes
+
+NAME          STATUS   ROLES    AGE   VERSION
+microk8s-s1   Ready    <none>   85m   v1.19.2-34+1b3fa60b402c1c
+microk8s-s2   Ready    <none>   75m   v1.19.2-34+1b3fa60b402c1c
+microk8s-s3   Ready    <none>   74m   v1.19.2-34+1b3fa60b402c1c
+
+5) add dashboard
+a) get token
+
+token=$(microk8s kubectl -n kube-system get secret | grep default-token | cut -d " " -f1)
+microk8s kubectl -n kube-system describe secret $token
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+Name:         default-token-c5l5h
+Namespace:    kube-system
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: default
+              kubernetes.io/service-account.uid: aaf17fe4-23ea-4ecc-b598-250b151edbf1
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1103 bytes
+namespace:  11 bytes
+token:      fyJhbGciOiJSUzI1NiIsImtpZCI6ImxNOTRyVFJ1bjd4MEtIM1VWYldVck91d2RodEVZZ0J2SWZxUmZqaTZNMFUifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkZWZhdWx0LXRva2VuLWM1bDVoIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImRlZmF1bHQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJhYWYxN2ZlNC0yM2VhLTRlY2MtYjU5OC0yNTBiMTUxZWRiZjEiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06ZGVmYXVsdCJ9.1y0uKyZc0LNOYY-l1yFx0bitmzNRSZxodjlkkukbJWnPns1jF7AB-F9ks-rkDRKvXduX-dpkG67F7XHppHtRdVZCwmNEOwELcrDwG5UHqYzh1EJI2irrwxj6o3VmHaAPbrTx8YCtGz8KQ6wGm35klkWqtcsBt94ZGicCGUOWSTvZWDp-ZacSHDmaWHKSJjphQQYsM_wVCRn9uVx_UFZOqG5TqWBPN-klmtocnBxGWHBrxxVmsSL6Z3xPGWGA0LjgQLn5hQ3ZDjuDodsAmVlSy9-PasRMaYvUxZR1PrV59QtuemtOVTb7rELFVElpHEyeDonj5NvSYp-_SL93fod5_Q
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+b) add proxy
+
+microk8s kubectl port-forward -n kube-system service/kubernetes-dashboard 10443:443 --address 0.0.0.0
+
+then in your web browser go to : https://ip_master:10443
+
+copy/paste the token to log in
